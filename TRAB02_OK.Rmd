@@ -1,0 +1,764 @@
+---
+title: "Trabalho_02_Amostragem"
+author: "Carlos Alberto Alves de Meneses,20180003202"
+date: "2023-03-12"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+PRÁTICA DA AMOSTRAGEM ALEATÓRIA SIMPLES, SISTEMÁTICA E ESTRATIFICADA EM BANCO DE DADOS.
+
+
+
+
+**Introdução**
+
+Uma amostra perfeita seria como Grandview: uma versão “reduzida” da população, refletindo todas as
+características de toda a população. Claro, nenhuma amostra perfeita pode existir para populações complicadas
+(mesmo que existisse, não saberíamos que era uma amostra perfeita sem medir toda a população). Mas uma
+boa amostra será representativa no sentido de que características de interesse na população podem ser
+estimadas a partir da amostra com um grau conhecido de precisão.
+
+Os termos amostra aleatória simples, amostra estratificada, amostra por conglomerado e amostra sistemática são básicos para qualquer discussão sobre pesquisas por amostragem, então vamos análisar um banco de dados utilizando esses tipos de amostras probabilísticas.
+
+**Objetivos**
+
+* Extrair amostras aleatórias simplificada, sistemática e por estratos de tamanho n = 30, do banco de dados *TRAB02*
+
+* Realizar a limpeza do banco excluindo as doenças que não serão utilizadas
+
+* Analisar a variável *Tempoint* em relação a sua média, variância e tamanho populacional
+
+
+**Amostra aleatória simples**
+
+Uma amostra aleatória simples (SRS) é a forma mais simples de amostra probabilística. Um SRS de tamanho n é considerado quando todo subconjunto possível de n unidades na população tem a mesma chance de ser a amostra. Ao pegar uma amostra aleatória, o investigador está, na verdade, misturando a população antes de pegar n unidades.
+ 
+ **1. Carregando a base de dados**
+ 
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+#Carregando a base de dados
+library(readxl)
+TRAB02 <- read_excel("~/Documents/ESTATISTICA/AMOSTRAGEM_PRO_JOAO/trabalho_01/TRAB02.xlsx")
+attach(TRAB02)
+
+```
+
+**Análise exploratória da população**
+
+Como nesse estudo temos acesso a nossa população, então, podemos obter algumas estatísticas da nossa variável *Tempoint* dessa população.
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+boxplot(TRAB02$Tempoint, main = "População")
+t.test(TRAB02$Tempoint)
+mean(TRAB02$Tempoint)
+var(TRAB02$Tempoint)
+sd(TRAB02$Tempoint)
+```
+
+A análise nos mostra que a média da variável *Tempoint* na nossa população é $\mu$=15, a variância é $\sigma^{2}$=82 e o desvio padrão é $\sigma$= 9,1.
+
+Agora, iremos extrair amostras dessa população de tamanho n = 30 e realizar as análises para observar qual técnica de amostragem mais se aproxima dos reais valores das estatísticas obtidas da população.
+
+Nota, esse tipo de experimento só é possível porque estamos tendo acesso aos dados de toda a população, porém, na vida real, na maioria das vezes isso não é possível.
+
+**1.2 Extrair amostras aleatória simples do banco de dados de tamanho n =30**
+
+Ao fixarmos uma semente garantimos obter os mesmos resultados em análises futuras.
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+# Fixa aleatorizacao
+set.seed(1) 
+
+# Extrair uma amostra aleatória simples com n = 30
+library(TeachingSampling)
+trab02 <- TRAB02[sample(nrow(TRAB02), 30), ]
+head(trab02) 
+#Alternativa
+AAS <- S.SI(200,30)
+trab02 <- TRAB02[AAS,]
+head(trab02) 
+#library(sampler)
+#trab02 <- rsamp(TRAB02, n=30, over = 0, rep = FALSE)
+#trab02
+```
+
+
+**1.3 Manipulando dados com o pacote dplyr**
+
+Usaremos o comando *select()* do pacote *dplyr* para extrai as colunas desejada,*Paciente, Sexo, Escolaridade, Unidade, Idade, Pesoinic, Altura, Peso30, Peso60, Tempoint, Dor1, Dor2, Dor3, Acred1, Acred2, Acred3, Pressao1, Pressao2, Pressao3, Satisfacao* e por útimo *Diabetes* da nossa tabela de dados *trab02* na forma de tabela.
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+library(magrittr)
+library(dplyr)
+dados1 <- trab02 %>% 
+  dplyr::select(Paciente, Sexo, Escolaridade, Unidade, Idade, Pesoinic, Altura, Peso30, Peso60, Tempoint, Dor1, Dor2, Dor3, Acred1, Acred2, Acred3, Pressao1, Pressao2, Pressao3, Satisfacao, Diabetes)
+
+head(dados1) 
+```
+
+**2.Amostragem Aleatória Simples**
+
+Os dados de uma amostra aleatória simples (SRS) podem ser analisadsos usando funções R que são projetadas para dados que podem ser considerados independentes e distribuições de forma idêntica, e um SRS pode ser selecionado usando a função de amostra do R.
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+#Caregue os pacotes necessários
+library(survey)
+library(sampling)
+library(SDAResources)
+```
+
+**2.1 Histograma**
+
+Primeiro, desenhamos um histograma da variável *Tempoint*.
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+# De  senhando o histograma
+hist(dados1$Tempoint,col="blue",xlab="Tempo de internação",
+main="Histograma: Tempo de internações")
+```
+
+**2.2 Usando fórmulas em SDA**
+
+Funções como t.test calcularão intervalos de confiança sem uma correção de população finita (fpc).
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+t.test(dados1$Tempoint)
+```
+Portanto, como p-valor = 0.00000000001081, nós rejeitamos a hipótese nula, logo,a média verdadeira não é igual a zero. Observamos um intervalode confiança de 95% = 14.40718 21.12615 e uma média estimada de 17,77.
+
+Erros padrão e intervalos de confiança que incorporam o fpc podem ser calculados diretamente com as fórmulas.
+
+
+* **Cálculo da média amostral**
+
+Com relação à $AAS_{s}$, a média amostral
+
+$\bar y = \frac{1}{n}\sum_{i}^{n}Y_{i}$
+
+*é um estimador não viesado da média populacional*.
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+#Calculo das estatística pela fórmula direta
+n <- length(dados1$Tempoint)
+ybar <- mean(dados1$Tempoint)
+ybar
+```
+com variância amostral dada por:
+
+$Var[\bar y] = (1 - f)\frac{S^2}{n}$
+
+onde
+
+$f = \frac{n}{N}$
+
+*é um estimador não viesado da variância amostral*.
+
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+#Precisamos encontrar uma nova medida que represente melhor a dispersão do conjunto de dados, usando todos os dados desse conjunto.
+N=200
+desvios <- (dados1$Tempoint - mean(dados1$Tempoint))
+#Variância
+hatvybar <- sum((desvios)^2)/(N-1)
+hatvybar
+``` 
+
+e com o desvio padrão dado por:
+
+$s=\sqrt{(1 - f)\frac{S^2}{n}}$
+
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+#Cálculo do desvio padrão
+seybar <- sqrt(hatvybar)
+seybar
+```
+
+
+**Cálculo do intervalo de confiança**
+
+Calculando o intervalo de confiança pela fórmula direta usando a distribuição t
+
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+#calcula o intervalo de confiança pela fórmula direta usando a distribuição t 
+Mean_CI <- c(ybar - qt(.975, n-1)*seybar, ybar + qt(.975, n-1)*seybar)
+names(Mean_CI) <- c("Lim Inf", "Lim Sup")
+Mean_CI
+```
+
+Para obter estimativas para o total da população, multiplicamos cada um de ybar, seybar e mean_CI por N=200
+
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+seybar*200
+```
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+Mean_CI*200
+```
+
+Calculando o coeficiente de variação da média.
+
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+#Calcula o coeficiente de variação da média
+cv <- seybar/ybar
+cv
+```
+
+**3. Amostragem Aleatória Sistemática-AAS**
+
+Às vezes, a amostragem sistemática é usada como um substituto para a amostragem aleatória simples, quando não existe uma lista da população ou quando a lista está em ordem aproximadamente aleatória. Para obter uma amostra sistemática, escolha um tamanho de amostra n. Se N/n for um número inteiro, seja k = N/ n; caso contrário, seja k o próximo inteiro após N/ n. Em seguida, encontre
+um inteiro aleatório R entre 1 e k, que determina a amostra como sendo as unidades numeradas R, R + k, R + 2k, etc. 
+
+Utilizando o mesmo banco de dados *TRAB02* agora para extrair uma amostra aleatória sistemática.
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+#Carregando o banco de dados
+TRAB02
+```
+
+Vamos selecionar uma amostra de tamanho n = 30 utilizando o método da amostragem aleatória sistemática.
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+library(TeachingSampling)
+N=nrow(TRAB02)
+n=30
+
+#Cálculo
+
+k = round(N/n) 
+aasist <-S.SY(N,k)
+aasist <- TRAB02[aasist,]
+head(aasist) 
+```
+
+**3.1 Manipulando dados com o pacote dplyr**
+
+Usaremos o comando *select()* do pacote *dplyr* para extrai as colunas desejada para obter o nosso banco de dados com a amostra aleatória sistemática.
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+library(magrittr)
+library(dplyr)
+dados2 <- aasist %>% 
+  dplyr::select(Paciente, Sexo, Escolaridade, Unidade, Idade, Pesoinic, Altura, Peso30, Peso60, Tempoint, Dor1, Dor2, Dor3, Acred1, Acred2, Acred3, Pressao1, Pressao2, Pressao3, Satisfacao, Diabetes)
+
+head(dados2) 
+```
+
+**3.2 Estatística descritiva com o pacote desctools**
+
+O código a seguir realiza a análise exploratória da variável *Tempoint*, tempo de internação, da nossa amostra aleatória sistemática.
+
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+library(DescTools)
+#Obtendo estatísticas da base de dados
+Desc(dados2$Tempoint, digits = 2, plotit = TRUE)
+```
+
+Ao analisarmos a saída do comando, vemos que é apresentado o resumo estatístico da variável *Tempoit* , tempo de internação: temos o número de observações
+(29), quantas foram válidas (n = 29), quantas foram perdidas ($N_{as}$= 0), quantas observações únicas (unique = 19 $\ne$n), quantos zeros aparecem ($0_s$=0), o valor da média (mean = 15,34), o intervalo de confiança da média (meanCI = 11,91 e 18,78) indicando que o tempo médio de internação é estimado entre 12 e 19 dias.
+
+Os percentis são apresentados em (.05 = 2,00; .10 = 3,60; ...; .95 = 28,60), são os valores dos percentis 5, 10, 25, 50 (mediana), 75, 90 e 95. As medidas de variabilidade são a amplitude (range = 28,00), o desvio-padrão (sd = 9,02), o coeficiente de variação (vcoef = 0,59), o desvio médio absoluto (mad = 10,38), a amplitude interquartil (IQR = 14,00), o coeficiente de assimetria (skew = -0,07) e o coeficiente de Curtose (kurt= -1,35).
+
+Após as medidas descritivas, uma tabela de frequência se apresenta para as variáveis quantitativas.
+
+**3.3 Estimador HT para o total populacional para Tempoint**
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+estima <- data.frame(dados2$Tempoint)
+E.SY(N,k, estima)
+```
+
+**3.4 Análise Descritiva**
+
+Análise do tempo de internação
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+par(mfrow=c())
+boxplot(TRAB02$Tempoint, main = "População")
+boxplot(dados1$Tempoint, main = "Amostragem Aleatória Simples")
+boxplot(dados2$Tempoint, main = "Amostragem Sistemática")
+```
+
+Através dos gráficos boxplots, observa-se que a tempo de internação varia conforme o plano amostral utilizado.
+
+Funções como t.test calcularão intervalos de confiança sem uma correção de população finita (fpc).
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+t.test(dados2$Tempoint)
+```
+
+Portanto, como p-valor = 0.0000000006431, nós rejeitamos a hipótese nula, logo,a média verdadeira não é igual a zero. Observamos um intervalode confiança de 95% = 11,91346 18,77620 e uma média estimada de 15,34483.
+
+**3.5 Cálculos da média e variância amostral e populacional**
+
+
+* **Cálculo da média amostral**
+
+Com relação à $AAS_{s}$, a média amostral
+
+$\bar y = \frac{1}{n}\sum_{i}^{n}Y_{i}$
+
+*é um estimador não viesado da média populacional*.
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+#Calculo das estatística pela fórmula direta
+n <- length(dados2$Tempoint)
+ybar <- mean(dados2$Tempoint)
+ybar
+```
+com variância amostral dada por:
+
+$Var[\bar y] = (1 - f)\frac{S^2}{n}$
+
+onde
+
+$f = \frac{n}{N}$
+
+*é um estimador não viesado da variância amostral*.
+
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+N = 200
+n = 30
+#Cálculo da variância
+desvios2 <- (dados2$Tempoint - mean(dados2$Tempoint))
+#Variância
+hatvybar <- sum((desvios2)^2)/(N-1)
+hatvybar
+```
+
+e com o desvio padrão dado por:
+
+$s=\sqrt{(1 - f)\frac{S^2}{n}}$
+
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+#Cálculo do desvio padrão
+seybar <- sqrt(hatvybar)
+seybar
+```
+
+
+**Cálculo do intervalo de confiança**
+
+Calculando o intervalo de confiança pela fórmula direta usando a distribuição t
+
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+#calcula o intervalo de confiança pela fórmula direta usando a distribuição t 
+Mean_CI <- c(ybar - qt(.975, n-1)*seybar, ybar + qt(.975, n-1)*seybar)
+names(Mean_CI) <- c("Lim Inf", "Lim Sup")
+Mean_CI
+```
+
+Para obter estimativas para o total da população, multiplicamos cada um de ybar, seybar e mean_CI por N=200
+
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+seybar*200
+```
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+Mean_CI*200
+```
+
+Calculando o coeficiente de variação da média.
+
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+#Calcula o coeficiente de variação da média
+cv <- seybar/ybar
+cv
+```
+
+
+**4. Amostragem estratificada**
+
+Nesse tipo de amostragem, uma população heterogênea é estratificada ou dividida em subpopulações ou estratos homogênios,e, em cada estrato, uma amostra é retirada. Desta forma, definimos, inicialmente, o número de estratos e obtemos, assim, o tamanho de cada um deles; para cada estrato, espercificamos quantos elementos serão retirados da subpopulação, podendo ser uma alocação uniforme ou proporcional.
+
+Utilizando o mesmo banco de dados *TRAB02* agora para extrair uma amostra estratificada.
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+#Carregando o banco de dados
+#TRAB02
+```
+
+**4.1 Limpeza do banco de dados**
+
+Iremos realizar a limpeza do banco de dados retirando as variáveis que não iremos utilizar.
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+library(magrittr)
+library(dplyr)
+dados3 <- TRAB02 %>% 
+  dplyr::select(Paciente, Sexo, Escolaridade, Unidade, Idade, Pesoinic, Altura, Peso30, Peso60, Tempoint, Dor1, Dor2, Dor3, Acred1, Acred2, Acred3, Pressao1, Pressao2, Pressao3, Satisfacao, Diabetes)
+
+head(dados3) 
+```
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+N=200
+n=30
+
+dados4 <- dados3 %>%
+  mutate(strwt=N/n)
+head(dados4) 
+```
+
+
+Vamos selecionar uma amostra utilizando o método da amostragem estratificada.
+
+
+**4.2 Método de Alocação**
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+#data.frame(dados4) #Carrega o conjunto de dados
+head(dados4)
+```
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+names(dados4)#Lista os nomes das variáveis
+```
+ 
+ 
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+head(dados4)#Exibe as seis primeiras observações do banco de dados
+```
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+nrow(dados4)#Número de linhas total do BD
+```
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+unique(dados4$Unidade)#Olhando as três unidades
+```
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+table(dados4$Unidade)#Número de unidades por estrato
+```
+
+Usaremos as informações sobre as *unidades* para alocar uma amostra estratificada.
+
+Lembrando que pelo questionário temos as unidades assim distribuídas:
+
+1. Mangabeira   2. Bancários  3. Valentina
+
+**4.3 Alocação proporcional**
+
+Com alocação proporcional, os tamanhos de amostra de estrato são proporcionais aos tamanhos de estrato populacional.
+Uma alocação proporcional é fácil de calcular no R; simplesmente multiplique $N_{h}$ pelo tamanho de amostra desejado. Nesse trabalho por exemplo, a unidade 2-Bancários tem 103 unidades e a população tem 200 observações. Para uma amostra de tamnaho n = 30, a alocação proporcional selecionará 16 amostra da unidade Bancários, 06 da unidade de Mangabeira e 08 da unidade do Valentina.
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+n = 30
+N = 200
+ub = 103
+um = 42
+uv = 55
+es_banc <- (n*ub)/N
+es_mang <- (n*um)/N
+es_val <- (n*uv)/N
+es_banc
+es_mang
+es_val
+```
+
+Os valores em *propalloc* são frações, então arredondamos para os inteiros mais próximos para obter o tamanho da amostra.
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+popsize <- table(dados4$Unidade)
+propalloc <- 30*popsize/sum(popsize)
+propalloc
+#Arredonda para o inteiro mais próximo
+propalloc_int <- round(propalloc)
+propalloc_int
+#Verifique se os tamnahos de amostra do estrato somam 30
+sum(propalloc)
+sum(propalloc_int)
+
+```
+
+**4.4 Alocação de Neyman**
+
+Para a alocação de Neyman, nós precisamos fornecer informações adicionais sobre as variações do estrato. Por exemplo, a variação na unidade dos Bancários é duas vezes a variação da unidade do Valentina. Utilizando o vetor *popsize* que foi calculado no código anterior, temos:
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+stratvar <- c(42, 103, 55)
+neymanalloc <- 30*(popsize*sqrt(stratvar))/sum(popsize*sqrt(stratvar))
+neymanalloc
+```
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+neymanalloc_int <- round(neymanalloc)
+neymanalloc_int
+sum(neymanalloc_int)
+```
+
+**4.5 Alocação ótima**
+
+A alocação ótima pode ser feita de forma semelhante definindo custos ou custos relativos para amostragem em cada estrato.
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+relcost <- c(42, 103, 55)
+optalloc <- 30*(popsize*sqrt(stratvar/relcost))/sum(popsize*sqrt(stratvar/relcost))
+optalloc
+optalloc_int <- round(optalloc)
+optalloc_int
+sum(optalloc_int)
+```
+
+**4.6 Usando a função strata do pacote de amostragem**
+
+Uma alternativa é usar estratos de função para selecionar uma amostra aleatória estratificada.
+
+* Ordenando a população por estratos
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+trab05 <- dados4[order(dados4$Unidade),]
+```
+
+Usaremos a função *strata* para selecionar as unidades para a amostra.
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+library(survey)
+library(sampling)
+library(SDAResources)
+index2 <- strata(trab05,stratanames = c("Unidade"), size = c(42,103,55), method = "srswor")
+```
+
+Vejamos o número de unidades selecionados dentro de cada estratos.
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+table(index2$Unidade)
+head(index2)
+```
+
+Vamos extrair a cabeça da amostra (strsample2)
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+strsample2 <- getdata(trab05,index2)
+head(strsample2)
+```
+
+O dataframe *index2* contém as variáveis do estrato, os identificadores das unidades selecionadas para compor a amostra e
+a probabilidade de inclusão de cada unidade na amostra. A função *getdata* então extrai as unidades amostradas dos dados
+populacionais.
+
+A função *strata* fornece as probabilidades de inclusão para as unidades amostrais, mas não os pesos.
+
+Podemos calcular os pesos de amostragem tomando o recíproco das probabilidades de inclusão. Ao calcular pesos para
+uma amostra aleatória estratificada, sempre verifique se os pesos somam os tamanhos da população do estrato. Se eles
+não somam os tamanhos populacionais do estrato, então, cometemos um erro em algum lugar nos cálculos de peso.
+
+* Calculando os pesos amostras.
+
+Verificamos primeiro se nenhuma probabilidade é zero.
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+sum(strsample2$Prob<=0)
+strsample2$sampwt<-1/strsample2$Prob
+```
+
+Agora, verificamos se os pesos amostrais somam os tamanhos populacionais para cada estrato.
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+
+tapply(strsample2$sampwt,strsample2$Unidade,sum)
+```
+
+**4.7 Calculando Estatísticas de uma Amostra Aleatória Estratificada**
+
+A função *svydesign* do pacote de pesquisa pode ser usada para inserir
+as informações da amostra aleatória estratificada, e as funções *svymean* e *svytotal* calcularão médias e totais estimados de
+uma amostra aleatória estratificada.
+
+O conjunto de dados agstrat é uma amostra aleatória estratificada retirada dos dados populacionais agpop com alocação
+proporcional. Primeiro, vamos olhar para os dados. 
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+library(magrittr)
+library(dplyr)
+str(dados4)
+names(dados4)
+nrow(dados4)
+unique(dados4$Unidade)
+table(dados4$Unidade)
+```
+
+O gráfico abaixo apresenta um boxplot para a variável *unidade*.
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+boxplot(Tempoint ~ Unidade, xlab = "Unidade", ylab = "Tempo de internação", data = dados4)
+```
+
+Podemos observar que a unidade 2 (Bancários) possui a maior mediana e a menor variabilidade, enquanto a unidade 1 (Mangabeira) e 3 (Valentina) possuem a mesma mediana, porém a unidade Valentina posui uma maior variabilidade.
+
+**4.8 Calculando as estimativas da amostra aleatória estratificada**
+
+Primeiro, configuramos as informações para o desing da pesquisa.
+
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+popsize_recode <- c('MG' = 42, 'BC' = 103, 'VA' = 55)
+dados4$popsize <- popsize_recode[dados4$Unidade]
+table(dados4$popsize) #Verifica o número de variáveis
+```
+
+Informações de projeto de entrada para *dados4* dstr
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+dstr <- svydesign(id = ~1, strata = ~Unidade, weigts = ~strwt, fpc = ~popsize,data = dados4)
+
+dstr
+```
+
+Todo o trabalho de especificação das informaçõs do projeto é feito na função *svydesing*; depois de definir o projeto lá, as funções *svymean* e *svytotal* são usados exatamente como fizemos para Amostra Aleatória Simples (SRS).
+
+* Cáculo da média
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+smean <- svymean(~Tempoint, dstr)
+smean
+```
+Portanto, obtemos uma média de 15 dias de tempo de interanação.
+
+* Cálculo do intervalo de confiança
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+confint(smean, level=.95, df=degf(dstr))
+```
+
+* Cálculos do total, SE e CI
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+stotal<-svytotal(~Tempoint, dstr)
+stotal
+```
+
+* Mostrando os graus de liberdade para o projeto
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+degf(dstr)
+```
+
+* Calcula o intervalo de confiança usando os graus de liberdade
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+confint(stotal, level=.95,df= degf(dstr))
+```
+
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+t.test(dados4$Tempoint)
+```
+
+Se a amostra tiver poucas observações, precisamos especificar os graus de liberdade e usar a distribuição t para calcular os intervalos de confiança.
+
+Portanto, pelo IC, a verdadeira média está localizada entre 14 e 16 dias de internação.
+
+* Cálculo da média e da variância de estratos
+
+A função *svyby* calculará estatísticas e seus erros padrão para subgrupos de dados. Aqui ele foi usado para calcular as médias e totais do estrato.
+
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+svyby(~Tempoint, by=~Unidade, dstr, svymean, keep.var = TRUE)
+```
+
+Portanto, temos as médias do tempo de internação de:
+
+15 dias para a unidade de Mangabeira, 15 dias para a unidade dos Bancários e de 16 dias para a unidade de Valentina.
+
+* Cálculo do total e SE
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+svyby(~Tempoint, ~Unidade, dstr, svytotal, keep.var = TRUE)
+```
+
+Portanto, obtemos os totais de tempo de internações para cada unidade.
+
+* Usando a função tapply
+
+Podemos calcular as estatísticas resumidas diretamente para cada estrato usando a *função tapply* e, em seguida, usar as fórmulas do SDA para calcular os erros padrão para cada média ou total estimado do estrato.
+
+* Calculando a média dentro de cada Unidade
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+strmean<-tapply(dados4$Tempoint,dados4$Unidade,mean)
+strmean
+```
+
+* Cálculo da variância dentro de cada Unidade
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+strvar <- tapply(dados4$Tempoint, dados4$Unidade, var)
+strvar
+```
+
+* Verificando os erros padrão pela fórmula direta
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+sampsize <- c(42,103,55)
+strse <- sqrt((1-sampsize/popsize)*strvar/sampsize) #mesmos erros padrão de svyby strse
+strse
+```
+
+**4.9 Estimando proporções de uma Amostra Aleatória Estratificada**
+
+Uma proporção é um caso especial de média de uma variável que assume os valores 1 e 0.
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+max(dados4$Tempoint)
+```
+
+* Criando a variavel lt30d
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+dados4$lt30d <- rep(0,nrow(dados4))
+dados4$lt30d[dados4$Tempoint<30] <- 1
+```
+
+
+Execute novamente o svydesing porque 
+o conjunto de dados agora tem uma
+nova variável
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+dstr <- svydesign(id = ~1, strata= ~Unidade, fpc = ~popsize, weigts = ~strwt, data = dados4 )
+```
+
+* Calcula proporção, SE e intervalo de confiança 
+
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+smeanp <- svymean(~lt30d,dstr)
+smeanp
+```
+
+* Cálculo do intervalo de confiança
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+confint(smeanp, level = .95, df=degf(dstr))
+```
+
+* Cálculo total, SE e CI
+
+```{r echo=FALSE, message=FALSE,warning=FALSE}
+stotalp <- svytotal(~lt30d,dstr)
+stotalp
+```
+
+**Conclusão**
+
+Através das análises observadas, podemos concluir que a seleção da amostra através do metodo da amostra estratificada, conseguimos  obter estatísticas que mais se aproximam dos reais paraâmetros da nossa população. 
+
+
+**Referência**
+
+LU, Yan; LOHR, Sharon L.. Using R Software with Sampling: design and analysis. 3. ed. New York: Crc Press, 2022. 205 p.
